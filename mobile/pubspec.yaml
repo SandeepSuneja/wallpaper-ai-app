@@ -1,0 +1,26 @@
+name: wallcraft_mobile
+description: Wallcraft mobile app — portrait wallpapers with FLUX.2 klein-base-4B.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.4.0
+  path_provider: ^2.1.5
+  permission_handler: ^12.0.0+1
+  async_wallpaper: ^2.1.0
+  gal: ^2.3.1
+  path: ^1.9.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

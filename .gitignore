@@ -1,0 +1,14 @@
+# Wallpaper AI / Wallcraft
+
+node_modules/
+dist/
+.angular/
+.venv/
+__pycache__/
+*.pyc
+.env
+backend/outputs/*.png
+backend/outputs/catalog.json
+!.gitkeep
+.DS_Store
+Thumbs.db

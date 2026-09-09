@@ -1,0 +1,178 @@
+<div class="stage">
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <header class="brand-bar">
+    <p class="brand">Wallcraft</p>
+    @if (health(); as h) {
+      <p class="model-chip">{{ h.model_id.split('/').pop() }} · {{ h.mock_generation ? 'mock' : h.device }}</p>
+    }
+  </header>
+
+  <main class="layout">
+    <section class="copy">
+      <h1>Desktop wallpapers, crafted to the screen.</h1>
+      <p class="lede">
+        Describe a scene. Wallcraft renders landscape wallpapers with FLUX.2 klein-base-4B — quality is tuned
+        automatically for the resolution you pick.
+      </p>
+
+      <label class="field">
+        <span>Prompt</span>
+        <textarea
+          [(ngModel)]="prompt"
+          rows="5"
+          maxlength="2000"
+          placeholder="A quiet coastal road at blue hour, wet asphalt reflections, long exposure clouds..."
+        ></textarea>
+      </label>
+
+      <label class="field">
+        <span>Resolution</span>
+        <select [(ngModel)]="selectedPreset">
+          @for (preset of presets(); track preset.id) {
+            <option [value]="preset.id">{{ preset.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="publish-toggle">
+        <input type="checkbox" [(ngModel)]="publishOnGenerate" />
+        <span>Publish after generate — make it available for everyone to download</span>
+      </label>
+
+      <div class="actions">
+        <button type="button" class="primary" [disabled]="generating() || prompt.trim().length < 3" (click)="generate()">
+          {{ generating() ? 'Rendering…' : 'Generate wallpaper' }}
+        </button>
+      </div>
+
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+      @if (applyHint(); as hint) {
+        <p class="hint" role="status">{{ hint }}</p>
+      }
+    </section>
+
+    <section class="wallpaper-panel" aria-live="polite">
+      <div class="wallpaper-head">
+        <h2>Wallpaper</h2>
+        <p>Preview, apply to your desktop, or publish for everyone.</p>
+      </div>
+
+      @if (generating()) {
+        <div class="preview-frame loading">
+          <div class="pulse"></div>
+          <p>Composing {{ activePresetLabel() }}</p>
+        </div>
+      } @else if (result(); as r) {
+        <div class="preview-frame">
+          <img [src]="r.image_url" [alt]="r.prompt" />
+          <div class="meta">
+            <span>{{ r.width }}×{{ r.height }}</span>
+            @if (r.published) {
+              <span class="published">published</span>
+            }
+            @if (r.mock) {
+              <span class="mock">mock</span>
+            }
+          </div>
+        </div>
+
+        <div class="wallpaper-actions">
+          <button type="button" class="ghost" (click)="openPreview()">Preview</button>
+          <button type="button" class="ghost" (click)="applyAs('background')">Set as background</button>
+          <button type="button" class="ghost" (click)="applyAs('lockscreen')">Set as lock screen</button>
+          @if (!r.published) {
+            <button type="button" class="ghost" [disabled]="publishing()" (click)="publishCurrent()">
+              {{ publishing() ? 'Publishing…' : 'Publish' }}
+            </button>
+          } @else {
+            <span class="published-note">Published to gallery</span>
+          }
+        </div>
+      } @else {
+        <div class="preview-frame empty">
+          <p>Your wallpaper will appear here — edge to edge, ready for the desktop.</p>
+        </div>
+      }
+    </section>
+  </main>
+
+  <section class="gallery">
+    <div class="gallery-head">
+      <h2>Published gallery</h2>
+      <p>Landscape wallpapers shared for everyone to download.</p>
+    </div>
+    @if (gallery().length === 0) {
+      <p class="gallery-empty">No published wallpapers yet. Generate one and publish it from the wallpaper section.</p>
+    } @else {
+      <div class="gallery-grid">
+        @for (item of gallery(); track item.id) {
+          <article class="gallery-card" (click)="openGalleryPreview(item)">
+            <div class="gallery-thumb">
+              <img [src]="item.image_url" [alt]="item.prompt" />
+              <button
+                type="button"
+                class="icon-btn thumb-download"
+                title="Download"
+                aria-label="Download wallpaper"
+                (click)="onThumbnailDownload($event, item)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M12 3v10m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="gallery-meta">
+              <p>{{ item.width }}×{{ item.height }}</p>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</div>
+
+@if (previewItem(); as item) {
+  <div class="lightbox" role="dialog" aria-modal="true" aria-label="Wallpaper preview" (click)="closePreview()">
+    <div class="lightbox-panel" (click)="$event.stopPropagation()">
+      <button type="button" class="lightbox-close" (click)="closePreview()" aria-label="Close preview">Close</button>
+      <div class="lightbox-media">
+        <img [src]="item.image_url" [alt]="item.prompt" />
+        <button
+          type="button"
+          class="icon-btn preview-download"
+          title="Download PNG"
+          aria-label="Download PNG"
+          (click)="downloadPreview()"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 3v10m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+      <div class="lightbox-actions">
+        <p class="lightbox-caption">{{ item.width }}×{{ item.height }}</p>
+        <div class="wallpaper-actions">
+          <button type="button" class="ghost compact" (click)="applyAs('background', 'preview')">Background</button>
+          <button type="button" class="ghost compact" (click)="applyAs('lockscreen', 'preview')">Lock screen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
